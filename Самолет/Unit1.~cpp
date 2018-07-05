@@ -1,0 +1,99 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+
+#include "Unit1.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TForm1 *Form1;
+//---------------------------------------------------------------------------
+__fastcall TForm1::TForm1(TComponent* Owner)
+        : TForm(Owner)
+{
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::FormCreate(TObject *Sender)
+{
+ Form1->DoubleBuffered=true;  // Включение режима "двойной буферизации" для уменьшения мерцания
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::Timer1Timer(TObject *Sender)
+{
+ double x=StrToFloat(Edit1->Text);   // Время в секундах
+ Edit1->Text=x+1;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Timer2Timer(TObject *Sender)
+{
+ int speed = 5;
+ Image2->Left+=speed;                     // Смещение самолета
+ if (Image2->Left>700)
+   Image2->Left=Image1->Left;   // Возврат самолета к левому краю
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::Timer3Timer(TObject *Sender)
+{
+ Image3->Top-=8;          // Смещение ракеты
+ 
+ int sx1,sx2,sy1,sy2,rx1,rx2,ry1,ry2;
+ sx1=Image2->Left;                   // Левый край самолета
+ sx2=Image2->Left+Image2->Width;     // Правый край самолета
+ sy1=Image2->Top;                    // Верхний край самолета
+ sy2=Image2->Top+Image2->Height;     // Нижний край самолета
+ rx1=Image3->Left;
+ rx2=Image3->Left+Image3->Width;     // То же для ракеты
+ ry1=Image3->Top;
+ ry2=Image3->Top+Image3->Height;
+ if (!(rx1>sx2 || rx2<sx1 || ry1>sy2 || ry2<sy1)) {
+                                           // Пересечение самолета с ракетой
+   Label3->Caption=Label3->Caption.ToInt()+1;   // Очки
+
+   Image5->Height=50;                           // Размер картинки взрыва
+   Image5->Width=50;
+   Image5->Left=(rx1+rx2)/2-Image5->Width/2;    // Положение взрыва там, где была ракета
+   Image5->Top=ry1-Image5->Height;
+
+   Image5->Show();                 // показать взрыв
+   Image2->Hide();                 // скрыть самолет и ракету
+   Image3->Hide();
+
+   Timer3->Enabled=false;          // остановить таймер ракеты
+   Timer4->Enabled=true;          // включить таймер растяжения картинки взрыва
+ }
+
+ if (ry2<0) {                     // ракета ушла вверх
+   Timer3->Enabled=false;         // остановить таймер ракеты
+   Image3->Top=Image4->Top;       // вернуть ракету в начальную позицию
+ }
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::Button1Click(TObject *Sender)
+{
+ Timer3->Enabled=true;            // запустить движение ракеты
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::Timer4Timer(TObject *Sender)
+{                               // Растяжение картинки взрыва
+  double dh=3,dw=3;
+  Image5->Height+=2*dh;
+  Image5->Top-=dh*0.8;
+  Image5->Width+=2*dw;
+  Image5->Left-=dw/2;
+
+  if (Image5->Height>180) {   // окончание показа взрыва
+    Timer4->Enabled=false;
+    Image2->Left=-Image2->Width;   // Восстановление самолета и ракеты
+    speed+=3;
+    Image3->Top=Image4->Top;
+    Image2->Show();
+    Image3->Show();
+    Image5->Hide();
+  }  
+}
+//---------------------------------------------------------------------------
+
